@@ -336,6 +336,7 @@ public class MatlController : ControllerBase
             BizOrder = x.BizOrder,
             OperationType = x.OperationType,
             Quantity = x.Quantity,
+            Balance = x.Balance,
             Uom = x.Uom,
             CreationUser = x.CreationUser,
             Comment = x.Comment,
@@ -520,7 +521,8 @@ public class MatlController : ControllerBase
         {
             InventoryKey = inventoryKey,
             Quantity = args.Quantity,
-            Fifo = args.Batch  // TODO 根据项目需求调整
+            Fifo = args.Batch,                   // TODO 根据项目需求调整
+            AgeBaseline = DateTime.Now.Date,     // TODO 根据项目需求调整
         });
 
 

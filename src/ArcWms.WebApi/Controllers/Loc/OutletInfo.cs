@@ -42,7 +42,6 @@ public class OutletInfo
     public string? CurrentUat { get; init; }
 
 
-    // TODO 重命名
     /// <summary>
     /// 最近一次为此出货口调度下架的时间
     /// </summary>

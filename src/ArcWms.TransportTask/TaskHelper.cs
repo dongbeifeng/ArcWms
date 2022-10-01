@@ -21,16 +21,9 @@ public sealed class TaskHelper
 
     readonly IAppSeqService _appSeqService;
     readonly UnitloadHelper _unitloadHelper;
-    readonly IIndex<string, ICompletionHandler> _completionHandlers;
-    readonly IIndex<string, IRequestHandler> _requestHandlers;
 
     public const string ChangeUnitloadLocationTaskType = "更改托盘位置";
 
-    [DoesNotReturn]
-    static void ThrowInvalidRequestException(string error)
-    {
-        throw new InvalidRequestException(error);
-    }
 
     /// <summary>
     /// 
@@ -43,11 +36,6 @@ public sealed class TaskHelper
         throw new CreateTaskFailedException(error);
     }
 
-    [DoesNotReturn]
-    static void ThrowCompleteTaskFailedException(string error)
-    {
-        throw new CompleteTaskFailedException(error);
-    }
 
 
     public TaskHelper(
@@ -56,8 +44,6 @@ public sealed class TaskHelper
         UnitloadHelper unitloadHelper,
         Func<TransportTask> createTransportTask,
         Func<ArchivedTransportTask> createArchivedTransportTask,
-        IIndex<string, IRequestHandler> requestHandlers,
-        IIndex<string, ICompletionHandler> completedTaskHandlers,
         ILogger<TaskHelper> logger)
     {
         _session = session;
@@ -66,51 +52,43 @@ public sealed class TaskHelper
         _createTransportTask = createTransportTask;
         _createArchivedTransportTask = createArchivedTransportTask;
         _logger = logger;
-        _completionHandlers = completedTaskHandlers;
-        _requestHandlers = requestHandlers;
     }
 
-    [return: NotNull]
-    public IRequestHandler GetRequestHandler(string requestType)
+
+
+    /// <summary>
+    /// 获取已注册 <see cref="IRequestHandler"/> 的请求类型。
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<string> GetRequestTypes()
     {
-        Guard.IsNotNullOrWhiteSpace(requestType, nameof(requestType));
-
-        if (_requestHandlers.TryGetValue(requestType, out var handler) == false)
-        {
-            ThrowInvalidRequestException($"不支持的请求类型 {requestType}");
-        }
-
-        return handler;
+        return RequestTypes;
     }
 
-
-    [return: NotNull]
-    public ICompletionHandler GetCompletionHandler(string taskType)
+    /// <summary>
+    /// 获取已注册 <see cref="ICompletionHandler"/> 的任务类型。
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<string> GetTaskTypes()
     {
-        Guard.IsNotNullOrWhiteSpace(taskType, nameof(taskType));
-
-        if (_completionHandlers.TryGetValue(taskType, out var handler) == false)
-        {
-            ThrowCompleteTaskFailedException($"不支持的任务类型 {taskType}");
-        }
-
-        return handler;
+        return TaskTypes;
     }
 
-
-    public IEnumerable<string>? GetSupportedRequestTypes()
+    /// <summary>
+    /// 获取已注册 <see cref="IAutoMoveDownHandler"/> 的单据类型。
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<string> GetOrderTypes()
     {
-        return SupportedRequestTypes;
+        return OrderTypes;
     }
 
-    public IEnumerable<string>? GetSupportedTaskTypes()
-    {
-        return SupportedTaskTypes;
-    }
+    internal static IEnumerable<string> RequestTypes { get; set; } = new string[0];
 
-    internal static IEnumerable<string>? SupportedRequestTypes { get; set; }
+    internal static IEnumerable<string> TaskTypes { get; set; } = new string[0];
 
-    internal static IEnumerable<string>? SupportedTaskTypes { get; set; }
+    internal static IEnumerable<string> OrderTypes { get; set; } = new string[0];
+
 
     /// <summary>
     /// 生成任务，并保存到数据库。

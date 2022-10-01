@@ -38,8 +38,6 @@ public class TaskHelperTest
         return new TaskHelper(session, new Seqs(), unitloadHelper, 
             () => new TransportTask(), 
             () => new ArchivedTransportTask(),
-            For<IIndex<string, IRequestHandler>>(),
-            For<IIndex<string, ICompletionHandler>>(),
             For<ILogger<TaskHelper>>()
             );
     }

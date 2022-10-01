@@ -3,6 +3,7 @@
 /// <summary>
 /// 巷道的使用数据。
 /// </summary>
+[Serializable]
 public record StreetletUsageData
 {
     /// <summary>

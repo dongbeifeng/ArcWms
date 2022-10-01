@@ -3,7 +3,7 @@
 /// <summary>
 /// 将出库单附加到出口的操作参数。
 /// </summary>
-public class OutboundOrderAttachToPortsArgs
+public class OutboundOrderAttachToOutletsArgs
 {
     /// <summary>
     /// 出库单 Id。
@@ -13,7 +13,7 @@ public class OutboundOrderAttachToPortsArgs
     /// <summary>
     /// 出口编码。
     /// </summary>
-    public string[]? Ports { get; set; }
+    public string[]? Outlets { get; set; }
 }
 
 

@@ -10,7 +10,7 @@ public class InvalidRequestException : Exception
     /// 
     /// </summary>
     /// <param name="error">错误信息，末尾不带标点符号。</param>
-    public InvalidRequestException(string error) : base($"无效的请求：{error}。")
+    public InvalidRequestException(string error) : base($"无效的请求：{error}")
     {
     }
 }

@@ -5,7 +5,6 @@ using ArcWms.WebApi.Handlers;
 using ArcWms.WebApi.MetaData;
 using ArcWms.WebApi.Models;
 using Autofac;
-using AutofacSerilogIntegration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -178,8 +177,6 @@ public class Startup
     {
         var loggerFactory = new SerilogLoggerFactory();
 
-        builder.RegisterLogger();
-
         builder.AddAppSeqs();
         builder.AddOps();
         builder.AddNHibernate(loggerFactory);
@@ -244,7 +241,8 @@ public class Startup
                 .UseTaskSender<DummyTaskSender>()
                 .AddRequestHandler<上架请求处理程序>("上架")
                 .AddCompletedTaskHandler<一般完成处理程序>("上架")
-                .AddCompletedTaskHandler<一般完成处理程序>("下架");
+                .AddCompletedTaskHandler<一般完成处理程序>("下架")
+                .AddAutoMoveDownHandler<DefaultOboMoveDownHandler>("出库单");
         }, loggerFactory);
 
         builder.AddInboundOrder(module =>
@@ -302,7 +300,6 @@ public class Startup
             }
         });
 
-        app.UseSerilogRequestLogging();
         app.UseRouting();
         app.UseAuthentication();
 

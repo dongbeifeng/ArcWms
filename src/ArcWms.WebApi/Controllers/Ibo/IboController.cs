@@ -415,7 +415,8 @@ public class IboController : ControllerBase
         {
             InventoryKey = inventoryKey, 
             Quantity = args.Quantity,
-            Fifo = args.Batch  // TODO 根据项目需求调整
+            Fifo = args.Batch,              // TODO 根据项目需求调整
+            AgeBaseline = DateTime.Now.Date,     // TODO 根据项目需求调整
         });
 
         var op = await this.SaveOpAsync($"托盘号：{args.PalletCode}");

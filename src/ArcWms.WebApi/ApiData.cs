@@ -1,6 +1,7 @@
 ﻿using Arc.Ops;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using NHibernateAspNetCoreFilters;
 using NHibernateUtils;
 using OperationTypeAspNetCoreAuthorization;
 

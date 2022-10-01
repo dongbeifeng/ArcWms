@@ -117,7 +117,7 @@ public class LocController : ControllerBase
         Streetlet streetlet = await _session.GetAsync<Streetlet>(args.StreetletId).ConfigureAwait(false);
         if (streetlet == null)
         {
-            throw new InvalidOperationException("巷道不存在");
+            throw new InvalidOperationException($"巷道不存在。");
         }
 
         streetlet.Outlets.Clear();

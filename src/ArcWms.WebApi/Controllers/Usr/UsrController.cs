@@ -2,7 +2,7 @@ using ArcWms.WebApi.MetaData;
 using ArcWms.WebApi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using NHibernate.Linq;
+using Microsoft.EntityFrameworkCore;
 using NHibernateUtils;
 using OperationTypeAspNetCoreAuthorization;
 using System.Linq.Dynamic.Core;
@@ -25,7 +25,7 @@ public class UsrController : ControllerBase
     readonly UserManager<ApplicationUser> _userManager;
     readonly RoleManager<ApplicationRole> _roleManager;
     readonly ApplicationDbContext _applicationDbContext;
-    readonly ILogger _logger;
+    readonly ILogger<UsrController> _logger;
 
     /// <summary>
     /// 初始化新实例。
@@ -38,7 +38,7 @@ public class UsrController : ControllerBase
         ApplicationDbContext applicationDbContext,
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
-        ILogger logger
+        ILogger<UsrController> logger
         )
     {
         _applicationDbContext = applicationDbContext;

@@ -4,17 +4,10 @@ namespace ArcWms.WebApi.Handlers;
 
 public class 上架请求处理程序 : IRequestHandler
 {
-    private static Queue<int> _queue = new Queue<int>();
-
-
     readonly TaskHelper _taskHelper;
-
     readonly ITaskSender _taskSender;
-
     readonly ISession _session;
-
     readonly SAllocationHelper _sallocHelper;
-
     readonly ILogger<上架请求处理程序> _logger;
 
     public 上架请求处理程序(ISession session, TaskHelper taskHelper, ITaskSender taskSender, SAllocationHelper sallocHelper, ILogger<上架请求处理程序> logger)
@@ -27,66 +20,47 @@ public class 上架请求处理程序 : IRequestHandler
     }
 
 
+    private record StreetletData(Streetlet Streetlet)
+    {
+        public int InboundCount { get; set; }
+        public float VacancyRate { get; set; }
+    }
+
     public async Task ProcessRequestAsync(RequestInfo requestInfo)
     {
         _logger.LogDebug(requestInfo.ToString());
         CheckRequest(requestInfo);
 
-        // 1 入口
-        string entranceLocationCode = requestInfo.LocationCode ?? throw new InvalidOperationException("未提供请求位置");
-        var entrance = await _session.Query<Location>()
-            .Where(x => x.LocationCode == entranceLocationCode)
-            .SingleOrDefaultAsync()
-            .ConfigureAwait(false);
-        if (entrance == null)
-        {
-            string msg = string.Format("请求位置在 Wms 中不存在。【{0}】。", entranceLocationCode);
-            throw new InvalidRequestException(msg);
-        }
+        // 1 加载入口数据
+        Location entrance = await PrepareEntranceAsync(requestInfo).ConfigureAwait(false);
 
-        // 2 托盘
-        string containerCode = requestInfo.PalletCode ?? throw new InvalidOperationException("未提供托盘号"); ;
-        var unitload = await _session.Query<Unitload>()
-            .Where(x => x.PalletCode == containerCode)
-            .SingleOrDefaultAsync()
-            .ConfigureAwait(false);
-        if (unitload == null)
-        {
-            string msg = string.Format("货载不存在。容器编码【{0}】。", containerCode);
-            throw new InvalidRequestException(msg);
-        }
+        // 2 加载托盘数据
+        Unitload unitload = await PrepareUnitloadAsync(requestInfo).ConfigureAwait(false);
 
         // 将请求中的高度和重量记录到货载
-        unitload.StorageInfo = unitload.StorageInfo with 
-        { 
-            Height = requestInfo.Height, 
-            Weight = requestInfo.Weight 
+        unitload.StorageInfo = unitload.StorageInfo with
+        {
+            Height = requestInfo.Height,
+            Weight = requestInfo.Weight
         };
 
         // 3 分配货位
-        Location? target = null;
-        var streetlets = await _session.Query<Streetlet>().ToListAsync().ConfigureAwait(false);
-        lock (_queue)
-        {
-            if (_queue.Count == 0)
-            {
-                foreach (var streetlet in streetlets)
-                {
-                    _queue.Enqueue(streetlet.StreetletId);
-                }
-            }
-        }
+        Streetlet[] arr = await PrepareStreetlets(unitload.StorageInfo.StorageGroup).ConfigureAwait(false);
 
-        for (int i = 0; i < _queue.Count; i++)
+        Location? target = null;
+        foreach (var streetlet in arr)
         {
-            var id = _queue.Dequeue();
-            _queue.Enqueue(id);
-            var streetlet = streetlets.Single(x => x.StreetletId == id);
             _logger.LogDebug("正在检查巷道 {streetletCode}", streetlet.StreetletCode);
+
+            if (streetlet.IsDoubleDeep)
+            {
+                _logger.LogDebug("跳过 {streetletCode}：这是双深巷道 ", streetlet.StreetletCode);
+                continue;
+            }
 
             if (streetlet.IsInboundDisabled)
             {
-                _logger.LogWarning("跳过禁入的巷道 {streetletCode}", streetlet.StreetletCode);
+                _logger.LogWarning("跳过 {streetletCode}：巷道已禁入", streetlet.StreetletCode);
                 continue;
             }
 
@@ -104,6 +78,7 @@ public class 上架请求处理程序 : IRequestHandler
             }
         }
 
+
         if (target == null)
         {
             // 分配货位失败
@@ -116,6 +91,63 @@ public class 上架请求处理程序 : IRequestHandler
 
         // 5 下发任务
         await _taskSender.SendTaskAsync(task).ConfigureAwait(false);
+    }
+
+    private async Task<Streetlet[]> PrepareStreetlets(string storageGroup)
+    {
+        var streetlets = await _session.Query<Streetlet>()
+            .ToListAsync()
+            .ConfigureAwait(false);
+
+        var data = streetlets.Select(x => new StreetletData(x));
+        foreach (var item in data)
+        {
+            item.InboundCount = await _session
+                .Query<TransportTask>()
+                .Where(t => t.End.Streetlet == item.Streetlet)
+                .CountAsync()
+                .ConfigureAwait(false);
+            var usage = item.Streetlet.Usage.Where(y => y.Key.StorageGroup == storageGroup);
+            item.VacancyRate = usage.Sum(y => y.Value.Available) / (float)usage.Sum(y => y.Value.Total);
+        }
+
+        return data
+            .OrderBy(x => x.InboundCount)           // 优选选择入站少的巷道
+            .ThenByDescending(x => x.VacancyRate)   // 其次选择空闲率大的巷道
+            .Select(x => x.Streetlet)
+            .ToArray();
+    }
+
+    private async Task<Unitload> PrepareUnitloadAsync(RequestInfo requestInfo)
+    {
+        string containerCode = requestInfo.PalletCode ?? throw new InvalidOperationException("未提供托盘号"); ;
+        var unitload = await _session.Query<Unitload>()
+            .Where(x => x.PalletCode == containerCode)
+            .SingleOrDefaultAsync()
+            .ConfigureAwait(false);
+        if (unitload == null)
+        {
+            string msg = string.Format("货载不存在。容器编码【{0}】。", containerCode);
+            throw new InvalidRequestException(msg);
+        }
+
+        return unitload;
+    }
+
+    private async Task<Location> PrepareEntranceAsync(RequestInfo requestInfo)
+    {
+        string entranceLocationCode = requestInfo.LocationCode ?? throw new InvalidOperationException("未提供请求位置");
+        var entrance = await _session.Query<Location>()
+            .Where(x => x.LocationCode == entranceLocationCode)
+            .SingleOrDefaultAsync()
+            .ConfigureAwait(false);
+        if (entrance == null)
+        {
+            string msg = string.Format("请求位置在 Wms 中不存在。【{0}】。", entranceLocationCode);
+            throw new InvalidRequestException(msg);
+        }
+
+        return entrance;
     }
 
     public virtual void CheckRequest(RequestInfo requestInfo)

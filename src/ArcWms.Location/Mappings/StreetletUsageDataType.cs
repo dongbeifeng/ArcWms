@@ -6,7 +6,6 @@ using System.Data.Common;
 
 namespace ArcWms.Mappings;
 
-[Serializable]
 public class StreetletUsageDataType : ICompositeUserType
 {
     public Type ReturnedClass

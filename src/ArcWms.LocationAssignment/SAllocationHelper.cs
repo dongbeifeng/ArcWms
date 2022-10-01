@@ -5,7 +5,7 @@ using System.Linq.Dynamic.Core;
 namespace ArcWms;
 
 /// <summary>
-/// 单叉巷道分配货位帮助类。
+/// 单深位巷道分配货位帮助类。
 /// </summary>
 public sealed class SAllocationHelper
 {

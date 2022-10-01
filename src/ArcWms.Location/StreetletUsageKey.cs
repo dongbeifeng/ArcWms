@@ -5,6 +5,7 @@ namespace ArcWms;
 /// <summary>
 /// 巷道使用信息的 Key。
 /// </summary>
+[Serializable]
 public record StreetletUsageKey
 {
     /// <summary>

@@ -86,6 +86,12 @@ public class FlowInfo
     /// </summary>
     public decimal Quantity { get; set; }
 
+
+    /// <summary>
+    /// 库存余额。
+    /// </summary>
+    public decimal Balance { get; set; }
+
     /// <summary>
     /// 计量单位
     /// </summary>
@@ -101,6 +107,7 @@ public class FlowInfo
     /// 备注
     /// </summary>
     public string? Comment { get; set; }
+
 
 }
 

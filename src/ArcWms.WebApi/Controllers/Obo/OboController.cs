@@ -16,7 +16,7 @@ namespace ArcWms.WebApi.Controllers;
 public class OboController : ControllerBase
 {
     readonly ISession _session;
-    readonly ILogger _logger;
+    readonly ILogger<OboController> _logger;
     readonly IAppSeqService _appSeqService;
     readonly IOutboundOrderAllocator _outboundOrderAllocator;
     readonly OutboundOrderPickHelper _outboundOrderPickHelper;
@@ -40,7 +40,7 @@ public class OboController : ControllerBase
         IAppSeqService appSeqService,
         FlowHelper flowHelper,
         MaterialOptions materialOptions,
-        ILogger logger
+        ILogger<OboController> logger
         )
     {
         _session = session;
@@ -497,13 +497,13 @@ public class OboController : ControllerBase
     /// <returns></returns>
     [Transaction]
     [OperationType(OperationTypes.出库单下架)]
-    [HttpPost("attach-to-ports")]
-    public async Task<ApiData> AttachToPorts(OutboundOrderAttachToPortsArgs args)
+    [HttpPost("attach-to-outlets")]
+    public async Task<ApiData> AttachToOutlets(OutboundOrderAttachToOutletsArgs args)
     {
         OutboundOrder obo = _session.Get<OutboundOrder>(args.OutboundOrderId);
-        _logger.LogDebug("正在将出库单附加到出货口");
+        _logger.LogDebug("正在将出库单附加到出口");
         _logger.LogDebug("出库单 Id 是 {outboundOrderId}", args.OutboundOrderId);
-        _logger.LogDebug("出货口是 {ports}", args.Ports);
+        _logger.LogDebug("出货口是 {outlets}", args.Outlets);
 
         if (obo == null || obo.Closed)
         {
@@ -522,12 +522,12 @@ public class OboController : ControllerBase
             return this.Failure($"出库单 {obo.OutboundOrderCode} 在货架上没有货载");
         }
 
-        if (args.Ports == null)
+        if (args.Outlets == null)
         {
-            args.Ports = new string[0];
+            args.Outlets = new string[0];
         }
 
-        var arr = _session.Query<Outlet>().Where(x => args.Ports.Contains(x.OutletCode)).ToArray();
+        var arr = _session.Query<Outlet>().Where(x => args.Outlets.Contains(x.OutletCode)).ToArray();
         var prev = _session.Query<Outlet>().Where(x => x.CurrentUat == obo).ToArray();
 
         // 移除页面上没有指定的

@@ -118,22 +118,4 @@ public sealed class PalletizationHelper
         return unitload;
     }
 
-    /// <summary>
-    /// 创建新货载。
-    /// </summary>
-    /// <param name="palletCode"></param>
-    /// <param name="inventoryKey"></param>
-    /// <param name="quantity"></param>
-    /// <returns></returns>
-    public async Task<Unitload> PalletizeAsync(string palletCode,
-                                               InventoryKey inventoryKey,
-                                               decimal quantity
-                                               )
-    {
-        var item = new PalletizationItemInfo { InventoryKey = inventoryKey, Quantity = quantity };
-        var items = new[] { item };
-        return await PalletizeAsync(palletCode, items)
-            .ConfigureAwait(false);
-    }
-
 }

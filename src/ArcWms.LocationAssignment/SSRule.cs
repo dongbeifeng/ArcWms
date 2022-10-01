@@ -26,12 +26,12 @@ public class SSRule : IRule
 
     public bool CanApplyTo(Streetlet streetlet)
     {
-        return streetlet.IsDoubleDeep;
+        return !streetlet.IsDoubleDeep;
     }
 
 
 
-    public string Name => "SSRule01";
+    public string Name => "SSRule";
 
     public int Order => 100;
 

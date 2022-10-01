@@ -6,6 +6,7 @@ namespace ArcWms;
 /// <summary>
 /// 存储信息。这些信息决定了入库分配货位的结果。
 /// </summary>
+[Serializable]
 public record StorageInfo
 {
     /// <summary>
