@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This file contains job definitions in schema version 2.0 format -->
+
+<job-scheduling-data xmlns="http://quartznet.sourceforge.net/JobSchedulingData" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0">
+
+	<processing-directives>
+		<overwrite-existing-data>true</overwrite-existing-data>
+	</processing-directives>
+
+	<schedule>		
+<!--		<job>
+			<name>HttpRequestJob</name>
+			<group>FA</group>
+			<description>HTTP请求</description>
+			<job-type>Wes.HttpRequestJob, Wes.HttpRequestJob</job-type>
+			<durable>false</durable>
+			<recover>false</recover>
+			<job-data-map>
+				<entry>
+					<key>base</key>
+					<value>http://localhost:5000/</value>
+				</entry>
+			</job-data-map>
+		</job>
+
+		<trigger>
+			<cron>
+				<name>DeleteLogs</name>
+				<group>FA</group>
+				<description>删除日志</description>
+				<job-name>HttpRequestJob</job-name>
+				<job-group>FA</job-group>
+				<job-data-map>
+					<entry>
+						<key>Method</key>
+						<value>POST</value>
+					</entry>
+					<entry>
+						<key>RelativeUri</key>
+						<value>/api/log/delete</value>
+					</entry>
+				</job-data-map>
+				<misfire-instruction>SmartPolicy</misfire-instruction>
+				<cron-expression>0 0/5 * * * ?</cron-expression>
+			</cron>
+		</trigger>
+
+		<trigger>
+			<cron>
+				<name>CheckPorts</name>
+				<group>FA</group>
+				<description>出货口单据自动下架</description>
+				<job-name>HttpRequestJob</job-name>
+				<job-group>FA</job-group>
+				<job-data-map>
+					<entry>
+						<key>Method</key>
+						<value>POST</value>
+					</entry>
+					<entry>
+						<key>RelativeUri</key>
+						<value>/api/tsk/check-ports</value>
+					</entry>
+					<entry>
+						<key>JsonData</key>
+						<value>
+							<![CDATA[
+							{ "a": 1 } 
+							]]>
+						</value>
+					</entry>
+				</job-data-map>
+				<misfire-instruction>SmartPolicy</misfire-instruction>
+				<cron-expression>0/10 * * * * ?</cron-expression>
+			</cron>
+		</trigger>
+
+	
+
+		<trigger>
+			<cron>
+				<name>monthlyReport</name>
+				<group>FA</group>
+				<description>生成月报</description>
+				<job-name>HttpRequestJob</job-name>
+				<job-group>FA</job-group>
+				<job-data-map>
+					<entry>
+						<key>Method</key>
+						<value>POST</value>
+					</entry>
+					<entry>
+						<key>RelativeUri</key>
+						<value>api/rpt/build-monthly-report</value>
+					</entry>
+				</job-data-map>
+				<misfire-instruction>SmartPolicy</misfire-instruction>
+				<cron-expression>0 15/15 0 1 * ? *</cron-expression>
+			</cron>
+		</trigger>
+
+
+		<trigger>
+			<cron>
+				<name>Inquire</name>
+				<group>FA</group>
+				<description>查询状态</description>
+				<job-name>HttpRequestJob</job-name>
+				<job-group>FA</job-group>
+				<job-data-map>
+					<entry>
+						<key>Method</key>
+						<value>POST</value>
+					</entry>
+					<entry>
+						<key>RelativeUri</key>
+						<value>/api/srm/inquire?deviceName=srm005</value>
+					</entry>
+			
+				</job-data-map>
+				<misfire-instruction>SmartPolicy</misfire-instruction>
+				<cron-expression>0/10 * * * * ?</cron-expression>
+			</cron>
+		</trigger>
+		-->
+	</schedule>
+</job-scheduling-data>
