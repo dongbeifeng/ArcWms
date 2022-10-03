@@ -22,7 +22,7 @@ public class SideViewLocation
     /// <summary>
     /// 是否有货
     /// </summary>
-    public bool Loaded { get; set; }
+    public bool IsLoaded { get; set; }
 
     /// <summary>
     /// 货架在巷道的哪一侧

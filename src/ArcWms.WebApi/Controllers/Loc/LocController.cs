@@ -5,6 +5,7 @@ using NHibernate.Linq;
 using NHibernateAspNetCoreFilters;
 using NHibernateUtils;
 using OperationTypeAspNetCoreAuthorization;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ArcWms.WebApi.Controllers;
 
@@ -81,6 +82,120 @@ public class LocController : ControllerBase
                 .ToArray(),
         });
     }
+
+
+
+    /// <summary>
+    /// 禁止巷道入站。
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    [HttpPost("disable-streetlet-inbound")]
+    [OperationType(OperationTypes.禁止巷道入站)]
+    [Transaction]
+    public async Task<ApiData> DisableStreetletInbound(EnableStreetletArgs args)
+    {
+        Streetlet streetlet = await _session
+            .GetAsync<Streetlet>(args.StreetletId)
+            .ConfigureAwait(false);
+
+        if (streetlet.IsInboundDisabled == false)
+        {
+            streetlet.IsInboundDisabled = true;
+            streetlet.InboundDisabledComment = args.Comment;
+            await _session.UpdateAsync(streetlet).ConfigureAwait(false);
+        }
+
+        _logger.LogInformation("已将巷道 {streetletCode} 禁止入站", streetlet.StreetletCode);
+        _ = await this.SaveOpAsync($"巷道：{streetlet.StreetletCode}。备注：{args.Comment}").ConfigureAwait(false);
+
+        return this.Success();
+    }
+
+    /// <summary>
+    /// 允许巷道入站。
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    [HttpPost("enable-streetlet-inbound")]
+    [OperationType(OperationTypes.允许巷道入站)]
+    [Transaction]
+    public async Task<ApiData> EnableStreetletInbound(EnableStreetletArgs args)
+    {
+        Streetlet streetlet = await _session
+            .GetAsync<Streetlet>(args.StreetletId)
+            .ConfigureAwait(false);
+
+        if (streetlet.IsInboundDisabled)
+        {
+            streetlet.IsInboundDisabled = false;
+            streetlet.InboundDisabledComment = args.Comment;
+            await _session.UpdateAsync(streetlet).ConfigureAwait(false);
+        }
+
+        _logger.LogInformation("已将巷道 {streetletCode} 允许入站", streetlet.StreetletCode);
+        _ = await this.SaveOpAsync($"巷道：{streetlet.StreetletCode}。备注：{args.Comment}").ConfigureAwait(false);
+
+        return this.Success();
+
+    }
+
+    /// <summary>
+    /// 禁止巷道出站
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    [HttpPost("disable-streetlet-outbound")]
+    [OperationType(OperationTypes.禁止巷道出站)]
+    [Transaction]
+    public async Task<ApiData> DisableStreetletOutbound(EnableStreetletArgs args)
+    {
+        Streetlet streetlet = await _session
+            .GetAsync<Streetlet>(args.StreetletId)
+            .ConfigureAwait(false);
+
+        if (streetlet.IsOutboundDisabled == false)
+        {
+            streetlet.IsOutboundDisabled = true;
+            streetlet.OutboundDisabledComment = args.Comment;
+            await _session.UpdateAsync(streetlet).ConfigureAwait(false);
+        }
+
+        _logger.LogInformation("已将巷道 {streetletCode} 禁止出站", streetlet.StreetletCode);
+        _ = await this.SaveOpAsync($"巷道：{streetlet.StreetletCode}。备注：{args.Comment}").ConfigureAwait(false);
+
+        return this.Success();
+
+    }
+
+    /// <summary>
+    /// 允许巷道出站。
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns></returns>
+    [HttpPost("enable-streetlet-outbound")]
+    [OperationType(OperationTypes.允许巷道出站)]
+    [Transaction]
+    public async Task<ApiData> EnableStreetletOutbound(EnableStreetletArgs args)
+    {
+        Streetlet streetlet = await _session
+            .GetAsync<Streetlet>(args.StreetletId)
+            .ConfigureAwait(false);
+
+        if (streetlet.IsOutboundDisabled)
+        {
+            streetlet.IsOutboundDisabled = false;
+            streetlet.OutboundDisabledComment = args.Comment;
+            await _session.UpdateAsync(streetlet).ConfigureAwait(false);
+        }
+        _logger.LogInformation("已将巷道 {streetletCode} 允许出站", streetlet.StreetletCode);
+        _ = await this.SaveOpAsync($"巷道：{streetlet.StreetletCode}。备注：{args.Comment}").ConfigureAwait(false);
+
+        return this.Success();
+
+    }
+
+
 
     /// <summary>
     /// 获取巷道的选项列表
@@ -190,6 +305,8 @@ public class LocController : ControllerBase
             StreetletCode = streetlet.StreetletCode,
             IsInboundDisabled = streetlet.IsInboundDisabled,
             InboundDisabledComment = streetlet.InboundDisabledComment,
+            IsOutboundDisabled = streetlet.IsOutboundDisabled,
+            OutboundDisabledComment = streetlet.OutboundDisabledComment,
             AvailableCount = streetlet.Locations
                     .Where(x =>
                         x.Exists
@@ -204,7 +321,7 @@ public class LocController : ControllerBase
             {
                 LocationId = loc.LocationId,
                 LocationCode = loc.LocationCode,
-                Loaded = loc.UnitloadCount > 0,
+                IsLoaded = loc.UnitloadCount > 0,
                 Side = loc.Side,
                 Deep = loc.Deep,
                 Level = loc.Level,
@@ -361,21 +478,21 @@ public class LocController : ControllerBase
 
 
     /// <summary>
-    /// 禁止入站
+    /// 禁止位置入站。
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    [HttpPost("disable-inbound")]
-    [OperationType(OperationTypes.禁止入站)]
+    [HttpPost("disable-location-inbound")]
+    [OperationType(OperationTypes.禁止位置入站)]
     [Transaction]
-    public async Task<ApiData> DisableInbound(DisableLocationArgs args)
+    public async Task<ApiData> DisableLocationInbound(EnableLocationArgs args)
     {
         List<Location> locs = await _session.Query<Location>()
             .Where(x => args.LocationIds.Contains(x.LocationId))
             .ToListAsync()
             .ConfigureAwait(false);
 
-        int affected = 0;
+        List<string> updated = new List<string>();
         foreach (var loc in locs)
         {
             if (loc.LocationType == LocationTypes.N)
@@ -409,7 +526,9 @@ public class LocController : ControllerBase
                 await _locHelper.RebuildStreetletStatAsync(streetlet).ConfigureAwait(false);
             }
         }
-        _ = await this.SaveOpAsync("将 {0} 个位置设为禁止入站", affected).ConfigureAwait(false);
+
+        _logger.LogInformation("已将 {updated} 个位置禁止入站", updated.Count);
+        _ = await this.SaveOpAsync($"位置：{string.Join(", ", updated)}。备注：{args.Comment}").ConfigureAwait(false);
 
         return this.Success();
 
@@ -421,27 +540,29 @@ public class LocController : ControllerBase
                 loc.InboundDisabledComment = args.Comment;
                 await _session.UpdateAsync(loc).ConfigureAwait(false);
 
-                affected++;
+                updated.Add(loc.LocationCode);
+
+                _logger.LogInformation("已将位置 {locationCode} 禁止入站", loc.LocationCode);
             }
         }
     }
 
     /// <summary>
-    /// 允许入站。
+    /// 允许位置入站。
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    [HttpPost("enable-inbound")]
-    [OperationType(OperationTypes.允许入站)]
+    [HttpPost("enable-location-inbound")]
+    [OperationType(OperationTypes.允许位置入站)]
     [Transaction]
-    public async Task<ApiData> EnableInbound(DisableLocationArgs args)
+    public async Task<ApiData> EnableLocationInbound(EnableLocationArgs args)
     {
         List<Location> locs = await _session.Query<Location>()
             .Where(x => args.LocationIds.Contains(x.LocationId))
             .ToListAsync()
             .ConfigureAwait(false);
 
-        int affected = 0;
+        List<string> updated = new List<string>();
         foreach (var loc in locs)
         {
             if (loc.LocationType == LocationTypes.N)
@@ -470,7 +591,8 @@ public class LocController : ControllerBase
             await _locHelper.RebuildStreetletStatAsync(streetlet!).ConfigureAwait(false);
         }
 
-        _ = await this.SaveOpAsync("将 {0} 个位置设为允许入站。", affected).ConfigureAwait(false);
+        _logger.LogInformation("已将 {updated} 个位置允许入站", updated.Count);
+        _ = await this.SaveOpAsync($"位置：{string.Join(", ", updated)}。备注：{args.Comment}").ConfigureAwait(false);
 
         return this.Success();
 
@@ -482,20 +604,22 @@ public class LocController : ControllerBase
                 loc.InboundDisabledComment = args.Comment;
                 await _session.UpdateAsync(loc).ConfigureAwait(false);
 
-                affected++;
+                updated.Add(loc.LocationCode);
+
+                _logger.LogInformation("已将位置 {locationCode} 允许入站", loc.LocationCode);
             }
         }
     }
 
     /// <summary>
-    /// 禁止出站
+    /// 禁止位置出站。
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    [HttpPost("disable-outbound")]
-    [OperationType(OperationTypes.禁止出站)]
+    [HttpPost("disable-location-outbound")]
+    [OperationType(OperationTypes.禁止位置出站)]
     [Transaction]
-    public async Task<ApiData> DisableOutbound(DisableLocationArgs args)
+    public async Task<ApiData> DisableLocationOutbound(EnableLocationArgs args)
     {
         List<Location> locs = await _session.Query<Location>()
             .Where(x => args.LocationIds.Contains(x.LocationId))
@@ -505,7 +629,8 @@ public class LocController : ControllerBase
         {
             throw new InvalidOperationException("未指定货位。");
         }
-        int affected = 0;
+
+        List<string> updated = new List<string>();
         foreach (var loc in locs)
         {
             if (loc.LocationType == LocationTypes.N)
@@ -537,7 +662,8 @@ public class LocController : ControllerBase
             }
         }
 
-        _ = await this.SaveOpAsync("将 {0} 个位置设为禁止出站。", affected).ConfigureAwait(false);
+        _logger.LogInformation("已将 {updated} 个位置禁止出站", updated.Count);
+        _ = await this.SaveOpAsync($"位置：{string.Join(", ", updated)}。备注：{args.Comment}").ConfigureAwait(false);
 
         return this.Success();
 
@@ -549,20 +675,22 @@ public class LocController : ControllerBase
                 loc.OutboundDisabledComment = args.Comment;
                 await _session.UpdateAsync(loc).ConfigureAwait(false);
 
-                affected++;
+                updated.Add(loc.LocationCode);
+
+                _logger.LogInformation("已将位置 {locationCode} 禁止出站", loc.LocationCode);
             }
         }
     }
 
     /// <summary>
-    /// 允许出站。
+    /// 允许位置出站。
     /// </summary>
     /// <param name="args"></param>
     /// <returns></returns>
-    [HttpPost("enable-outbound")]
-    [OperationType(OperationTypes.允许出站)]
+    [HttpPost("enable-location-outbound")]
+    [OperationType(OperationTypes.允许位置出站)]
     [Transaction]
-    public async Task<ApiData> EnableOutbound(DisableLocationArgs args)
+    public async Task<ApiData> EnableLocationOutbound(EnableLocationArgs args)
     {
         List<Location> locs = await _session.Query<Location>()
             .Where(x => args.LocationIds.Contains(x.LocationId))
@@ -572,8 +700,8 @@ public class LocController : ControllerBase
         {
             throw new InvalidOperationException("未指定货位。");
         }
-        int affected = 0;
 
+        List<string> updated = new List<string>();
         foreach (var loc in locs)
         {
             if (loc.LocationType == LocationTypes.N)
@@ -605,7 +733,9 @@ public class LocController : ControllerBase
             }
         }
 
-        _ = await this.SaveOpAsync("将 {0} 个位置设为允许出站", affected).ConfigureAwait(false);
+        _logger.LogInformation("已将 {updated} 个位置允许出站", updated.Count);
+        _ = await this.SaveOpAsync($"位置：{string.Join(", ", updated)}。备注：{args.Comment}").ConfigureAwait(false);
+
         return this.Success();
 
         async Task EnableOneAsync(Location loc)
@@ -616,10 +746,14 @@ public class LocController : ControllerBase
                 loc.OutboundDisabledComment = args.Comment;
                 await _session.UpdateAsync(loc).ConfigureAwait(false);
 
-                affected++;
+                updated.Add(loc.LocationCode);
+
+                _logger.LogInformation("已将位置 {locationCode} 允许出站", loc.LocationCode);
             }
         }
     }
+
+
 
 
     /// <summary>

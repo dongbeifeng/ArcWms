@@ -37,9 +37,9 @@ public class AllocateStockOptions
     //public bool IncludeOutside { get; init; } = false;
 
     /// <summary>
-    /// 指示是否跳过脱机的巷道。已脱机巷道的托盘无法下架，但跳过会打破先入先出规则。默认为 false
+    /// 指示是否跳过禁出的巷道。已禁出巷道的托盘无法下架，但跳过会打破先入先出规则。默认为 false。
     /// </summary>
-    public bool SkipOfflineStreetlets { get; set; } = false;
+    public bool SkipStreetletsOutboundDisabled { get; set; } = false;
 
     /// <summary>
     /// 从数据库加载数据的块大小，默认为 10

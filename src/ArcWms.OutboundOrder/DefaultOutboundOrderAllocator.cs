@@ -321,7 +321,7 @@ public class DefaultOutboundOrderAllocator : IOutboundOrderAllocator
         }
 
         if (item.Unitload.CurrentLocation?.Streetlet?.IsOutboundDisabled == false
-            || options?.SkipOfflineStreetlets != true
+            || options?.SkipStreetletsOutboundDisabled != true
             || options?.IncludePallets?.Contains(item.Unitload.PalletCode, StringComparer.OrdinalIgnoreCase) == true)
         {
             _logger.LogDebug("（√）巷道未禁出、或允许从禁出的巷道分配、或显式包含");

@@ -9,10 +9,15 @@ class OperationTypes
     public const string 创建出口 = "位置.创建出口";
     public const string 查看位置 = "位置.查看位置";
 
-    public const string 禁止入站 = "位置.禁止入站";
-    public const string 允许入站 = "位置.允许入站";
-    public const string 禁止出站 = "位置.禁止出站";
-    public const string 允许出站 = "位置.允许出站";
+    public const string 禁止巷道入站 = "位置.禁止巷道入站";
+    public const string 允许巷道入站 = "位置.允许巷道入站";
+    public const string 禁止巷道出站 = "位置.禁止巷道出站";
+    public const string 允许巷道出站 = "位置.允许巷道出站";
+
+    public const string 禁止位置入站 = "位置.禁止位置入站";
+    public const string 允许位置入站 = "位置.允许位置入站";
+    public const string 禁止位置出站 = "位置.禁止位置出站";
+    public const string 允许位置出站 = "位置.允许位置出站";
 
 
 

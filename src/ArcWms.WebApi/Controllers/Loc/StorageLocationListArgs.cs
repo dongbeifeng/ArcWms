@@ -37,13 +37,13 @@ public class StorageLocationListArgs
     /// 货位是否有货。
     /// </summary>
     [SearchArg(SearchMode.Expression)]
-    public bool? Loaded { get; set; }
+    public bool? IsLoaded { get; set; }
 
-    internal Expression<Func<Location, bool>>? LoadedExpr
+    internal Expression<Func<Location, bool>>? IsLoadedExpr
     {
         get
         {
-            return Loaded switch
+            return IsLoaded switch
             {
                 true => x => x.UnitloadCount > 0,
                 false => x => x.UnitloadCount == 0,
