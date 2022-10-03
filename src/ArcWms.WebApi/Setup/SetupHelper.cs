@@ -7,6 +7,7 @@ using NHibernate;
 using NHibernate.Cfg;
 using NHibernate.Linq;
 using NHibernate.Tool.hbm2ddl;
+using NPOI.OpenXmlFormats.Spreadsheet;
 using System.Text.RegularExpressions;
 
 
@@ -58,7 +59,18 @@ public class SetupHelper
     /// <summary>
     /// 生成巷道。
     /// </summary>
-    /// <param name="options"></param>
+    /// <param name="streetletCode"></param>
+    /// <param name="doubleDeep"></param>
+    /// <param name="area"></param>
+    /// <param name="leftRack2"></param>
+    /// <param name="leftRack1"></param>
+    /// <param name="leftBays"></param>
+    /// <param name="leftLevels"></param>
+    /// <param name="rightRack1"></param>
+    /// <param name="rightRack2"></param>
+    /// <param name="rightBays"></param>
+    /// <param name="rightLevels"></param>
+    /// <param name="token"></param>
     /// <returns></returns>
     internal async Task GenerateStreetletAsync(
         string streetletCode, bool doubleDeep, string area,
@@ -68,8 +80,11 @@ public class SetupHelper
     {
         Console.WriteLine("正在生成巷道");
 
+        List<Cell> cells = new List<Cell>();
+
         try
         {
+
             using (ITransaction tx = _session.BeginTransaction())
             {
                 Console.WriteLine($"巷道编码：{streetletCode}，" +
@@ -123,18 +138,20 @@ public class SetupHelper
                 }
 
                 Console.WriteLine("正在生成货位");
+                var leftCells = await CreateCellsAsync(leftBays, leftLevels);
                 foreach (var rack in racks.Where(x => x.side == RackSide.Left))
                 {
                     if (rack.rackCode is not null)
                     {
-                        await CreateRackAsync(streetlet, rack.rackCode, rack.side, rack.deep, leftBays, leftLevels);
+                        await CreateRackAsync(streetlet, rack.rackCode, rack.side, rack.deep, leftBays, leftLevels, leftCells);
                     }
                 }
+                var rightCells = await CreateCellsAsync(rightBays, rightLevels);
                 foreach (var rack in racks.Where(x => x.side == RackSide.Right))
                 {
                     if (rack.rackCode is not null)
                     {
-                        await CreateRackAsync(streetlet, rack.rackCode, rack.side, rack.deep, rightBays, rightLevels);
+                        await CreateRackAsync(streetlet, rack.rackCode, rack.side, rack.deep, rightBays, rightLevels, rightCells);
                     }
                 }
 
@@ -149,6 +166,7 @@ MERGE cells c
 USING (SELECT cell_id, ROW_NUMBER() OVER(ORDER BY [level], bay, side) + :streetletId * 10000 AS i1
 		FROM locations
         WHERE streetlet_id = :streetletId
+        GROUP BY cell_id, [level], bay, side
     ) AS t
 ON c.cell_id = t.cell_id
 WHEN MATCHED THEN UPDATE SET c.i1 = t.i1;");
@@ -164,6 +182,7 @@ MERGE cells c
 USING (SELECT cell_id, ROW_NUMBER() OVER(ORDER BY [level], bay, side) + :streetletId * 10000 AS o1
 		FROM locations
         WHERE streetlet_id = :streetletId
+        GROUP BY cell_id, [level], bay, side
     ) AS t
 ON c.cell_id = t.cell_id
 WHEN MATCHED THEN UPDATE SET c.o1 = t.o1;");
@@ -190,40 +209,46 @@ WHEN MATCHED THEN UPDATE SET c.o1 = t.o1;");
             Console.WriteLine(ex);
         }
 
-        async Task CreateRackAsync(Streetlet streetlet, string rackCode, RackSide side, int deep, int columns, int levels)
+        async Task<Cell[,]> CreateCellsAsync(int bays, int levels)
+        {
+            Cell[,] cells = new Cell[bays, levels];
+            for (int i = 0; i < levels; i++)
+            {
+                for (int j = 0; j < bays; j++)
+                {
+                    cells[j, i] = _createCell();
+                    await _session.SaveAsync(cells[j, i], token).ConfigureAwait(false);
+                }
+            }
+            return cells;
+        }
+
+        async Task CreateRackAsync(Streetlet streetlet, string rackCode, RackSide side, int deep, int bays, int levels, Cell[,] cells)
         {
             for (int i = 0; i < levels; i++)
             {
-                for (int j = 0; j < columns; j++)
+                for (int j = 0; j < bays; j++)
                 {
                     int bay = j + 1;
                     int lv = i + 1;
-                    Cell cell = _createCell();
+                    Cell cell = cells[j, i];
 
-                    {
-                        string locCode = string.Format("{0}-{1:00}-{2:0}", rackCode, bay, lv);
-                        Location loc = _createLocation.Invoke();
-                        loc.LocationCode = locCode;
-                        loc.LocationType = LocationTypes.S;
-                        loc.Streetlet = streetlet;
-                        loc.Bay = bay;
-                        loc.Level = lv;
-                        loc.InboundLimit = 1;
-                        loc.OutboundLimit = 1;
-                        loc.Side = side;
-                        loc.Deep = deep;
-                        loc.StorageGroup = "普通";
-                        loc.Specification = "普通";
-                        loc.Cell = cell;
-                        cell.Locations.Add(loc);
-                    }
-
-                    await _session.SaveAsync(cell, token).ConfigureAwait(false);
-                    foreach (var loc in cell.Locations)
-                    {
-                        await _session.SaveAsync(loc, token).ConfigureAwait(false);
-                    }
-
+                    string locCode = string.Format("{0}-{1:00}-{2:0}", rackCode, bay, lv);
+                    Location loc = _createLocation.Invoke();
+                    loc.LocationCode = locCode;
+                    loc.LocationType = LocationTypes.S;
+                    loc.Streetlet = streetlet;
+                    loc.Bay = bay;
+                    loc.Level = lv;
+                    loc.InboundLimit = 1;
+                    loc.OutboundLimit = 1;
+                    loc.Side = side;
+                    loc.Deep = deep;
+                    loc.StorageGroup = "普通";
+                    loc.Specification = "普通";
+                    loc.Cell = cell;
+                    cell.Locations.Add(loc);
+                    await _session.SaveAsync(loc, token).ConfigureAwait(false);
                 }
             }
         }
